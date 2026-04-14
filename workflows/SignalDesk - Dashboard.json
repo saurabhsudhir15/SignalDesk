@@ -1,0 +1,130 @@
+{
+  "name": "SignalDesk - Dashboard",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "861f4c8e-9753-47c2-afb1-b92253f52492",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "url": "https://dumtzikdiqjfcsgunrmm.supabase.co/rest/v1/rpc/get_current_signals",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_SECRET_KEY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_SECRET_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "bc72f6f0-aabb-4bc2-b164-c4ad3514b3ac",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst today = new Date();\n\nfunction parseDocDate(str) {\n  const months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 };\n  const m = str.match(/(\\d{2})([A-Za-z]{3})(\\d{4})/);\n  if (!m) return null;\n  return new Date(parseInt(m[3]), months[m[2]], parseInt(m[1]));\n}\n\nfunction safeMd(str) {\n  if (!str) return '';\n  return str.replace(/_/g, ' ');\n}\n\nconst current = items.filter(item => {\n  const d = parseDocDate(item.json.doc_date || '');\n  if (!d) return false;\n  return Math.floor((today - d) / 86400000) <= 30;\n});\n\nif (current.length === 0) {\n  return [{ json: { result: \"No current signals in the last 30 days.\" } }];\n}\n\n// Deduplicate by stock_name — keep most recent\nconst deduped = {};\ncurrent.forEach(item => {\n  const name = item.json.stock_name;\n  const d = parseDocDate(item.json.doc_date || '');\n  const existing = deduped[name] ? parseDocDate(deduped[name].json.doc_date) : null;\n  if (!existing || d > existing) deduped[name] = item;\n});\n\nconst sectorStances = ['positive', 'cautious', 'negative'];\nconst stanceEmoji = {\n  buy: '🟢', sell: '🔴', trim: '🟡', add: '🟢',\n  avoid: '🔴', conviction_change: '🔵', hold: '⚪'\n};\n\nconst getBucket = (stance) => {\n  if (['sell', 'avoid', 'negative'].includes(stance)) return 'act_now';\n  if (['buy', 'add', 'positive'].includes(stance)) return 'opportunity';\n  return 'watch';\n};\n\nconst buckets = { act_now: [], opportunity: [], watch: [] };\n\nObject.values(deduped).forEach(item => {\n  const stance = item.json.stance || 'unknown';\n  const isSector = sectorStances.includes(stance);\n  const emoji = isSector ? '🏦' : (stanceEmoji[stance] || '⚪');\n  const bucket = getBucket(stance);\n  buckets[bucket].push({\n    label: `${emoji} ${item.json.stock_name} — ${stance} (${safeMd(item.json.channel)}, ${item.json.doc_date})`,\n    doc_date: item.json.doc_date\n  });\n});\n\nconst MAX = 10;\nlet hasMore = false;\nconst lines = ['SignalDesk — Last 30 Days', ''];\n\nconst printBucket = (key, header) => {\n  if (buckets[key].length === 0) return;\n  buckets[key].sort((a, b) => (parseDocDate(b.doc_date) || 0) - (parseDocDate(a.doc_date) || 0));\n  lines.push(header);\n  const total = buckets[key].length;\n  buckets[key].slice(0, MAX).forEach(s => lines.push(`  ${s.label}`));\n  if (total > MAX) { hasMore = true; lines.push(`  ...and ${total - MAX} more`); }\n  lines.push('');\n};\n\nprintBucket('act_now', '⚡ Act now');\nprintBucket('opportunity', '📈 Opportunity');\nprintBucket('watch', '👀 Watch');\n\nif (hasMore) {\n  lines.push('Capped at 10 per section. Ask me about a specific stock or sector for more.');\n}\n\nreturn [{ json: { result: lines.join('\\n') } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "9ff5fef3-d9cc-4991-bce0-d536bf506eec",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "content": "## See Dashboard\nCalled by the orchestrator agent when user types 'dashboard'. Calls get_current_signals RPC in Supabase.",
+        "height": 144,
+        "width": 208
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        128,
+        -192
+      ],
+      "typeVersion": 1,
+      "id": "52d22bfc-3753-45a2-8c11-41e4386e25b6",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Code signal display\nFilters signals from last 30 days, groups by stance (buy / hold / trim / sell / avoid) and returns formatted output",
+        "height": 128,
+        "width": 272
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        384,
+        -192
+      ],
+      "typeVersion": 1,
+      "id": "76105c14-dfec-408d-ad49-78924a87377b",
+      "name": "Sticky Note1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "171ad162-d29e-44aa-b84f-5a1406084176",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e4b4858364c9dbeac64467126d2effde460c7e274c324c19c04f17a94ba48a79"
+  },
+  "id": "JnF9z0qoAfJRJBL7",
+  "tags": []
+}
