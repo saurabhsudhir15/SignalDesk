@@ -4,7 +4,7 @@
 
 > Know exactly where every holding stands, without spending hours catching up.
 
-Capstone project | Mahesh Yadav Agentic AI PM Course | Cohort 8 | Saurabh Sudhir
+Saurabh Sudhir | Product Manager
 
 **[Watch the demo](https://drive.google.com/file/d/1KPNofX7zokVpXbP6dQ0KZuj_Q9qLJXF0/view?usp=sharing)**
 
