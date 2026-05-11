@@ -45,7 +45,7 @@
           "parameters": [
             {
               "name": "x-api-key",
-              "value": "sd_bca4902b94c6eada29f467f88b8f59ff"
+              "value": "YOUR_SUPADATA_API_KEY"
             }
           ]
         },
@@ -1009,7 +1009,7 @@
     },
     {
       "parameters": {
-        "url": "=https://api.telegram.org/bot8517764548:AAGbMDvSZ9YARrLTk8W3adqmob7KwU0o6kQ/getFile?file_id={{ $(\"Route by Content Type\").item.json.message.document.file_id }}",
+        "url": "=https://api.telegram.org/botYOUR_TELEGRAM_BOT_TOKEN/getFile?file_id={{ $(\"Route by Content Type\").item.json.message.document.file_id }}",
         "options": {}
       },
       "id": "b6293fa4-712a-487e-ad91-830bd74c5134",
@@ -1023,7 +1023,7 @@
     },
     {
       "parameters": {
-        "url": "=https://api.telegram.org/file/bot8517764548:AAGbMDvSZ9YARrLTk8W3adqmob7KwU0o6kQ/{{ $json.result.file_path }}",
+        "url": "=https://api.telegram.org/file/botYOUR_TELEGRAM_BOT_TOKEN/{{ $json.result.file_path }}",
         "options": {
           "response": {
             "response": {
